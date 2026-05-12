@@ -87,12 +87,3 @@ dev-detective/
 └── README.md       # This file
 ```
 
----
-
-## Screenshots
-
-> *(Add screenshots here after recording your QA demo)*
-
----
-
-Built as part of **Sprint 03 — Asynchronous Data Integration** at Prodesk IT.
