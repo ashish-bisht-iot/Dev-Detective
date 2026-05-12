@@ -10,33 +10,33 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
 
-  /* Light mode — green theme */
+  /* Light mode — grey + GitHub blue */
   :root{
-    --accent:#1d9e75;
-    --accent2:#0f6e56;
-    --accent-light:#e8f8f3;
+    --accent:#2f81f7;
+    --accent2:#388bfd;
+    --accent-light:rgba(47,129,247,0.08);
     --mono:'Space Mono',monospace;
-    --bg:#ffffff;
-    --bg2:#f4f4f0;
-    --border:#e0ddd5;
-    --text:#1a1a1a;
-    --text2:#555;
-    --text3:#999;
-    --shadow:0 4px 24px rgba(29,158,117,0.08);
+    --bg:#e8eaed;
+    --bg2:#d1d5db;
+    --border:#b0b7c3;
+    --text:#1f2328;
+    --text2:#4b5563;
+    --text3:#9ca3af;
+    --shadow:0 4px 24px rgba(47,129,247,0.08);
   }
 
-  /* Dark mode */
+  /* Dark mode — GitHub dark */
   [data-theme="dark"]{
-    --accent:#1d9e75;
-    --accent2:#25c795;
-    --accent-light:#0d2e24;
-    --bg:#1a1a1a;
-    --bg2:#111;
-    --border:#2e2e2e;
-    --text:#f0f0f0;
-    --text2:#aaa;
-    --text3:#666;
-    --shadow:0 4px 24px rgba(0,0,0,0.4);
+    --accent:#2f81f7;
+    --accent2:#388bfd;
+    --accent-light:rgba(47,129,247,0.1);
+    --bg:#161b22;
+    --bg2:#0d1117;
+    --border:#30363d;
+    --text:#e6edf3;
+    --text2:#8b949e;
+    --text3:#484f58;
+    --shadow:0 4px 24px rgba(0,0,0,0.5);
   }
 
   body{font-family:'Syne',sans-serif;background:var(--bg2);min-height:100vh;color:var(--text);transition:background 0.3s,color 0.3s}
@@ -67,11 +67,11 @@
   .input-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .gh-input{flex:1;min-width:140px;font-family:var(--mono);font-size:13px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);outline:none;transition:all 0.2s}
   .gh-input:hover{border-color:var(--accent);background:var(--accent-light)}
-  .gh-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,158,117,0.15)}
+  .gh-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,129,247,0.15)}
   .gh-input::placeholder{color:var(--text3)}
   .vs-label{font-size:11px;font-family:var(--mono);color:var(--text2);font-weight:700;padding:0 4px;flex-shrink:0}
   .search-btn{padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap}
-  .search-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(29,158,117,0.35)}
+  .search-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(47,129,247,0.4)}
   .search-btn:active{transform:translateY(0)}
   .search-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
 
@@ -82,11 +82,11 @@
 
   /* Profile card */
   .profile-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);transition:transform 0.2s,box-shadow 0.2s,border-color 0.2s}
-  .profile-card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(29,158,117,0.15);border-color:var(--accent)}
-  .profile-card.winner{border:2px solid #1d9e75}
-  .profile-card.winner:hover{box-shadow:0 8px 32px rgba(29,158,117,0.2)}
-  .profile-card.loser{border:2px solid #ef4444}
-  .profile-card.loser:hover{box-shadow:0 8px 32px rgba(239,68,68,0.15)}
+  .profile-card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(47,129,247,0.12);border-color:var(--accent)}
+  .profile-card.winner{border:2px solid #2f81f7}
+  .profile-card.winner:hover{box-shadow:0 8px 32px rgba(47,129,247,0.2)}
+  .profile-card.loser{border:2px solid #f85149}
+  .profile-card.loser:hover{box-shadow:0 8px 32px rgba(248,81,73,0.15)}
 
   .card-header{padding:1.25rem;display:flex;gap:14px;align-items:flex-start}
   .avatar{width:64px;height:64px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;object-fit:cover;transition:transform 0.2s,border-color 0.2s}
@@ -111,10 +111,10 @@
 
   /* Battle verdict */
   .verdict{padding:10px 1.25rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
-  .verdict.win{background:#f0fdf4;color:#16a34a}
-  .verdict.lose{background:#fef2f2;color:#dc2626}
-  [data-theme="dark"] .verdict.win{background:#14532d44;color:#4ade80}
-  [data-theme="dark"] .verdict.lose{background:#7f1d1d44;color:#f87171}
+  .verdict.win{background:rgba(47,129,247,0.08);color:#2f81f7}
+  .verdict.lose{background:rgba(248,81,73,0.08);color:#f85149}
+  [data-theme="dark"] .verdict.win{background:rgba(47,129,247,0.12);color:#58a6ff}
+  [data-theme="dark"] .verdict.lose{background:rgba(248,81,73,0.12);color:#f85149}
 
   /* Repos */
   .repos-section{padding:1rem 1.25rem;border-top:1px solid var(--border)}
@@ -154,7 +154,7 @@
       <h1>Dev-Detective</h1>
       <p>// github profile intelligence</p>
     </div>
-    <button class="dark-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+    <button class="dark-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
       <i class="ti ti-moon" id="theme-icon"></i>
     </button>
   </div>
@@ -186,7 +186,7 @@
 </div>
 
 <script>
-  // Dark mode toggle
+  // Theme toggle — light (white+blue) / dark (GitHub dark)
   let dark = false;
   function toggleTheme() {
     dark = !dark;
