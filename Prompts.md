@@ -1,7 +1,4 @@
-# Prompts.md — Dev-Detective Sprint 03
-
-This file documents the AI prompts I used during development as a learning tool and pair-programmer. I used Claude/ChatGPT to understand concepts, debug issues, and get unstuck — not to write the whole thing for me.
-
+This file documents the AI prompts I used during development as a learning tool and pair-programmer. I used Claude/ChatGPT to understand concepts, debug issues, and get unstuck.
 ---
 
 ## 1. Understanding Async/Await basics
@@ -82,12 +79,5 @@ At one point I was getting a 403 error from the GitHub API.
 
 **My prompt:**
 > "github api returning 403 forbidden, what does that mean and how do i fix it"
-
-**What I learned:**
-GitHub limits unauthenticated API calls to 60 per hour. I was spamming refresh while testing. The fix is to either wait or generate a Personal Access Token (PAT) and pass it in the request headers. I added a note in my error handling for this.
-
----
-
-## Notes
-
-I used AI to understand concepts and debug — but I typed the actual code myself and made sure I could explain every line before pushing. If I copied something and didn't understand it, I deleted it and rewrote it until I did.
+>
+> 
