@@ -37,16 +37,15 @@ function getHistory() {
 function addToHistory(username) {
   if (!username) return;
   let history = getHistory();
-  // Remove if already exists (move to top)
   history = history.filter(u => u.toLowerCase() !== username.toLowerCase());
   history.unshift(username);
-  // Keep only last MAX_HISTORY
   history = history.slice(0, MAX_HISTORY);
   localStorage.setItem('dd_history', JSON.stringify(history));
 }
 
+// FIX: permanently removes from localStorage so it won't come back on refresh
 function removeFromHistory(username) {
-  let history = getHistory().filter(u => u !== username);
+  let history = getHistory().filter(u => u.toLowerCase() !== username.toLowerCase());
   localStorage.setItem('dd_history', JSON.stringify(history));
 }
 
@@ -54,8 +53,6 @@ function removeFromHistory(username) {
 function showDropdown(inputEl) {
   const history = getHistory();
   const query = inputEl.value.trim().toLowerCase();
-
-  // Filter by current input value
   const filtered = query
     ? history.filter(u => u.toLowerCase().includes(query))
     : history;
@@ -65,7 +62,6 @@ function showDropdown(inputEl) {
     return;
   }
 
-  // Remove existing dropdown for this input
   closeDropdown(inputEl);
 
   const dropdown = document.createElement('div');
@@ -78,21 +74,30 @@ function showDropdown(inputEl) {
     item.innerHTML = `
       <span class="suggestion-icon"><i class="ti ti-history"></i></span>
       <span class="suggestion-name">${username}</span>
-      <button class="suggestion-remove" title="Remove" onclick="removeSuggestion(event, '${username}', '${inputEl.id}')">
+      <button class="suggestion-remove" title="Remove">
         <i class="ti ti-x"></i>
       </button>`;
+
+    // Click on suggestion name — fill input
     item.addEventListener('mousedown', (e) => {
-      // mousedown fires before blur, so we can set value before dropdown closes
       if (!e.target.closest('.suggestion-remove')) {
         inputEl.value = username;
         closeAllDropdowns();
         inputEl.focus();
       }
     });
+
+    // Click X — remove from history permanently and refresh dropdown
+    item.querySelector('.suggestion-remove').addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      removeFromHistory(username);         // save to localStorage immediately
+      showDropdown(inputEl);               // re-render dropdown without that item
+    });
+
     dropdown.appendChild(item);
   });
 
-  // Position dropdown below the input
   inputEl.parentNode.style.position = 'relative';
   inputEl.insertAdjacentElement('afterend', dropdown);
 }
@@ -106,25 +111,30 @@ function closeAllDropdowns() {
   document.querySelectorAll('.suggestions-dropdown').forEach(d => d.remove());
 }
 
-function removeSuggestion(e, username, inputId) {
-  e.stopPropagation();
-  removeFromHistory(username);
-  const inputEl = document.getElementById(inputId);
-  showDropdown(inputEl);
-}
-
-// ── Attach suggestion events to inputs ───────────────────────
 function attachSuggestionEvents() {
   ['input1', 'input2'].forEach(id => {
     const el = document.getElementById(id);
-
     el.addEventListener('focus', () => showDropdown(el));
     el.addEventListener('input', () => showDropdown(el));
     el.addEventListener('blur', () => {
-      // Small delay so mousedown on suggestion fires first
       setTimeout(() => closeDropdown(el), 150);
     });
   });
+}
+
+// ── Close card function ───────────────────────────────────────
+function closeCard() {
+  // Clear output and reset inputs
+  document.getElementById('output').innerHTML = `
+    <div class="state-box">
+      <div style="font-size:32px;margin-bottom:12px"><i class="ti ti-fingerprint"></i></div>
+      <p class="empty-txt">Enter a GitHub username to begin</p>
+      <p class="empty-sub">Fetching profile, repos &amp; stats in real-time</p>
+    </div>`;
+  document.getElementById('input1').value = '';
+  document.getElementById('input2').value = '';
+  // Clear saved result so it doesn't restore on refresh
+  localStorage.removeItem('dd_last');
 }
 
 // ── Utility ───────────────────────────────────────────────────
@@ -213,7 +223,13 @@ function buildCard(user, repos, verdict) {
     ? `<div class="verdict tie"><i class="ti ti-equal"></i> Tie — ${fmtNum(stars)} ⭐ total stars</div>`
     : '';
 
+  // Close button only shown in single mode (not battle)
+  const closeBtn = verdict === ''
+    ? `<button class="card-close-btn" onclick="closeCard()" title="Close"><i class="ti ti-x"></i></button>`
+    : '';
+
   return `<div class="profile-card ${verdict || ''}">
+    ${closeBtn}
     <div class="card-header">
       <img class="avatar" src="${user.avatar_url}" alt="${user.login} avatar"/>
       <div class="user-info">
@@ -247,7 +263,6 @@ function saveToStorage(data) {
 }
 
 function restoreFromStorage() {
-  // Restore theme
   const savedTheme = localStorage.getItem('dd_theme');
   if (savedTheme === 'dark') {
     dark = true;
@@ -255,7 +270,6 @@ function restoreFromStorage() {
     document.getElementById('theme-icon').className = 'ti ti-sun';
   }
 
-  // Restore mode
   const savedMode = localStorage.getItem('dd_mode');
   if (savedMode === 'battle') {
     mode = 'battle';
@@ -265,7 +279,6 @@ function restoreFromStorage() {
     document.getElementById('vs-label').style.display = 'flex';
   }
 
-  // Restore last search
   const saved = localStorage.getItem('dd_last');
   if (!saved) return;
 
@@ -322,7 +335,6 @@ async function runSearch() {
         fetchBattleSide(u2)
       ]);
 
-      // Only add to history if user was found
       if (side1.ok) addToHistory(u1);
       if (side2.ok) addToHistory(u2);
 
@@ -353,10 +365,7 @@ async function runSearch() {
         out.innerHTML = showError(e.status || 500, e.user || u1);
         return;
       }
-
-      // Only add to history if user was found
       addToHistory(u1);
-
       out.innerHTML = buildCard(userData, reposData, '');
       saveToStorage({ mode: 'single', u1, userData, reposData });
     }
