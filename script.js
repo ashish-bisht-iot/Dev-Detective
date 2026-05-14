@@ -17,41 +17,153 @@ function setMode(m) {
   document.getElementById('vs-label').style.display = m === 'battle' ? 'flex' : 'none';
   document.getElementById('output').innerHTML = '';
   localStorage.setItem('dd_mode', m);
+  closeAllDropdowns();
 }
 
 function onKey(e) {
   if (e.key === 'Enter') runSearch();
+  if (e.key === 'Escape') closeAllDropdowns();
 }
 
-// Utility: format ISO date to "25 Jan 2023"
+// ── Search History ────────────────────────────────────────────
+const MAX_HISTORY = 8;
+
+function getHistory() {
+  try {
+    return JSON.parse(localStorage.getItem('dd_history') || '[]');
+  } catch { return []; }
+}
+
+function addToHistory(username) {
+  if (!username) return;
+  let history = getHistory();
+  // Remove if already exists (move to top)
+  history = history.filter(u => u.toLowerCase() !== username.toLowerCase());
+  history.unshift(username);
+  // Keep only last MAX_HISTORY
+  history = history.slice(0, MAX_HISTORY);
+  localStorage.setItem('dd_history', JSON.stringify(history));
+}
+
+function removeFromHistory(username) {
+  let history = getHistory().filter(u => u !== username);
+  localStorage.setItem('dd_history', JSON.stringify(history));
+}
+
+// ── Dropdown UI ───────────────────────────────────────────────
+function showDropdown(inputEl) {
+  const history = getHistory();
+  const query = inputEl.value.trim().toLowerCase();
+
+  // Filter by current input value
+  const filtered = query
+    ? history.filter(u => u.toLowerCase().includes(query))
+    : history;
+
+  if (!filtered.length) {
+    closeDropdown(inputEl);
+    return;
+  }
+
+  // Remove existing dropdown for this input
+  closeDropdown(inputEl);
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'suggestions-dropdown';
+  dropdown.id = 'dd_' + inputEl.id;
+
+  filtered.forEach(username => {
+    const item = document.createElement('div');
+    item.className = 'suggestion-item';
+    item.innerHTML = `
+      <span class="suggestion-icon"><i class="ti ti-history"></i></span>
+      <span class="suggestion-name">${username}</span>
+      <button class="suggestion-remove" title="Remove" onclick="removeSuggestion(event, '${username}', '${inputEl.id}')">
+        <i class="ti ti-x"></i>
+      </button>`;
+    item.addEventListener('mousedown', (e) => {
+      // mousedown fires before blur, so we can set value before dropdown closes
+      if (!e.target.closest('.suggestion-remove')) {
+        inputEl.value = username;
+        closeAllDropdowns();
+        inputEl.focus();
+      }
+    });
+    dropdown.appendChild(item);
+  });
+
+  // Position dropdown below the input
+  inputEl.parentNode.style.position = 'relative';
+  inputEl.insertAdjacentElement('afterend', dropdown);
+}
+
+function closeDropdown(inputEl) {
+  const existing = document.getElementById('dd_' + inputEl.id);
+  if (existing) existing.remove();
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.suggestions-dropdown').forEach(d => d.remove());
+}
+
+function removeSuggestion(e, username, inputId) {
+  e.stopPropagation();
+  removeFromHistory(username);
+  const inputEl = document.getElementById(inputId);
+  showDropdown(inputEl);
+}
+
+// ── Attach suggestion events to inputs ───────────────────────
+function attachSuggestionEvents() {
+  ['input1', 'input2'].forEach(id => {
+    const el = document.getElementById(id);
+
+    el.addEventListener('focus', () => showDropdown(el));
+    el.addEventListener('input', () => showDropdown(el));
+    el.addEventListener('blur', () => {
+      // Small delay so mousedown on suggestion fires first
+      setTimeout(() => closeDropdown(el), 150);
+    });
+  });
+}
+
+// ── Utility ───────────────────────────────────────────────────
 function fmtDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-// Utility: format large numbers to "1.2k"
 function fmtNum(n) {
   if (n === null || n === undefined) return '0';
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
   return n.toString();
 }
 
-// Fetch user profile from GitHub API
+// ── API ───────────────────────────────────────────────────────
 async function fetchUser(username) {
   const response = await fetch(`https://api.github.com/users/${username}`);
   if (!response.ok) throw { status: response.status, user: username };
   return response.json();
 }
 
-// Fetch user's repositories
 async function fetchRepos(reposUrl) {
   const response = await fetch(reposUrl + '?sort=updated&per_page=10');
   if (!response.ok) return [];
   return response.json();
 }
 
-// Show loading state
+async function fetchBattleSide(username) {
+  try {
+    const user = await fetchUser(username);
+    const repos = await fetchRepos(user.repos_url);
+    return { ok: true, user, repos };
+  } catch (e) {
+    return { ok: false, status: e.status || 500, username };
+  }
+}
+
+// ── Loading / Error ───────────────────────────────────────────
 function showLoading(users) {
   const out = document.getElementById('output');
   if (mode === 'battle') {
@@ -63,7 +175,6 @@ function showLoading(users) {
   }
 }
 
-// Show error state (404 or other)
 function showError(status, user) {
   return `<div class="state-box">
     <div style="font-size:32px;margin-bottom:12px"><i class="ti ti-ghost"></i></div>
@@ -72,12 +183,11 @@ function showError(status, user) {
   </div>`;
 }
 
-// Calculate total stars across all repos
+// ── Card Builders ─────────────────────────────────────────────
 function calcStars(repos) {
   return repos.reduce((acc, repo) => acc + (repo.stargazers_count || 0), 0);
 }
 
-// Build repos list HTML
 function repoListHTML(repos) {
   const top5 = repos.slice(0, 5);
   if (!top5.length) return '<p style="font-size:12px;color:var(--text3);font-family:var(--mono)">No public repositories yet.</p>';
@@ -93,7 +203,6 @@ function repoListHTML(repos) {
     </div>`).join('');
 }
 
-// Build full profile card HTML
 function buildCard(user, repos, verdict) {
   const stars = calcStars(repos);
   const verdictHTML = verdict === 'winner'
@@ -132,23 +241,11 @@ function buildCard(user, repos, verdict) {
   </div>`;
 }
 
-// Fetch one battle side — returns { ok, user, repos } or { ok: false, status, username }
-async function fetchBattleSide(username) {
-  try {
-    const user = await fetchUser(username);
-    const repos = await fetchRepos(user.repos_url);
-    return { ok: true, user, repos };
-  } catch (e) {
-    return { ok: false, status: e.status || 500, username };
-  }
-}
-
-// Save last search to localStorage
+// ── Storage ───────────────────────────────────────────────────
 function saveToStorage(data) {
   localStorage.setItem('dd_last', JSON.stringify(data));
 }
 
-// Restore last search from localStorage on page load
 function restoreFromStorage() {
   // Restore theme
   const savedTheme = localStorage.getItem('dd_theme');
@@ -168,18 +265,15 @@ function restoreFromStorage() {
     document.getElementById('vs-label').style.display = 'flex';
   }
 
-  // Restore last search result
+  // Restore last search
   const saved = localStorage.getItem('dd_last');
   if (!saved) return;
 
   try {
     const data = JSON.parse(saved);
-
-    // Restore input values
     document.getElementById('input1').value = data.u1 || '';
     if (data.u2) document.getElementById('input2').value = data.u2;
 
-    // Restore output HTML directly from saved data
     if (data.mode === 'battle' && data.sides) {
       let verdict1 = '', verdict2 = '';
       if (data.sides[0].ok && data.sides[1].ok) {
@@ -199,20 +293,20 @@ function restoreFromStorage() {
     } else if (data.mode === 'single' && data.userData) {
       document.getElementById('output').innerHTML = buildCard(data.userData, data.reposData, '');
     }
-
   } catch (e) {
-    // Corrupted storage — clear it
     localStorage.removeItem('dd_last');
   }
 }
 
-// Main search function
+// ── Main Search ───────────────────────────────────────────────
 async function runSearch() {
   const u1 = document.getElementById('input1').value.trim();
   const u2 = document.getElementById('input2').value.trim();
 
   if (!u1) return document.getElementById('input1').focus();
   if (mode === 'battle' && !u2) return document.getElementById('input2').focus();
+
+  closeAllDropdowns();
 
   const btn = document.getElementById('search-btn');
   btn.disabled = true;
@@ -223,16 +317,16 @@ async function runSearch() {
 
   try {
     if (mode === 'battle') {
-
-      // Fetch both sides independently — neither cancels the other
       const [side1, side2] = await Promise.all([
         fetchBattleSide(u1),
         fetchBattleSide(u2)
       ]);
 
-      // Determine verdicts only if both sides loaded successfully
-      let verdict1 = '';
-      let verdict2 = '';
+      // Only add to history if user was found
+      if (side1.ok) addToHistory(u1);
+      if (side2.ok) addToHistory(u2);
+
+      let verdict1 = '', verdict2 = '';
       if (side1.ok && side2.ok) {
         const stars1 = calcStars(side1.repos);
         const stars2 = calcStars(side2.repos);
@@ -248,12 +342,9 @@ async function runSearch() {
         : showError(side2.status, side2.username);
 
       out.innerHTML = `<div class="battle-grid">${html1}${html2}</div>`;
-
-      // Save to localStorage
       saveToStorage({ mode: 'battle', u1, u2, sides: [side1, side2] });
 
     } else {
-      // Phase 1 & 2: Single search with endpoint chaining
       let userData, reposData;
       try {
         userData = await fetchUser(u1);
@@ -262,9 +353,11 @@ async function runSearch() {
         out.innerHTML = showError(e.status || 500, e.user || u1);
         return;
       }
-      out.innerHTML = buildCard(userData, reposData, '');
 
-      // Save to localStorage
+      // Only add to history if user was found
+      addToHistory(u1);
+
+      out.innerHTML = buildCard(userData, reposData, '');
       saveToStorage({ mode: 'single', u1, userData, reposData });
     }
 
@@ -274,5 +367,8 @@ async function runSearch() {
   }
 }
 
-// Restore on page load
-window.addEventListener('DOMContentLoaded', restoreFromStorage);
+// ── Init ──────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  restoreFromStorage();
+  attachSuggestionEvents();
+});
