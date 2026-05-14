@@ -14,7 +14,6 @@ function setMode(m) {
   document.getElementById('btn-battle').classList.toggle('active', m === 'battle');
   document.getElementById('input2').style.display = m === 'battle' ? 'flex' : 'none';
   document.getElementById('vs-label').style.display = m === 'battle' ? 'flex' : 'none';
-  document.getElementById('mode-badge').textContent = m === 'battle' ? 'Phase 3 — Promise.all()' : 'Phase 1–2';
   document.getElementById('output').innerHTML = '';
 }
 
@@ -99,6 +98,8 @@ function buildCard(user, repos, verdict) {
     ? `<div class="verdict win"><i class="ti ti-trophy"></i> Winner — ${fmtNum(stars)} ⭐ total stars</div>`
     : verdict === 'loser'
     ? `<div class="verdict lose"><i class="ti ti-x"></i> Loser — ${fmtNum(stars)} ⭐ total stars</div>`
+    : verdict === 'tie'
+    ? `<div class="verdict tie"><i class="ti ti-equal"></i> Tie — ${fmtNum(stars)} ⭐ total stars</div>`
     : '';
 
   return `<div class="profile-card ${verdict || ''}">
@@ -129,6 +130,17 @@ function buildCard(user, repos, verdict) {
   </div>`;
 }
 
+// Fetch one battle side — returns { ok, user, repos, error }
+async function fetchBattleSide(username) {
+  try {
+    const user = await fetchUser(username);
+    const repos = await fetchRepos(user.repos_url);
+    return { ok: true, user, repos };
+  } catch (e) {
+    return { ok: false, status: e.status || 500, username };
+  }
+}
+
 // Main search function
 async function runSearch() {
   const u1 = document.getElementById('input1').value.trim();
@@ -146,28 +158,34 @@ async function runSearch() {
 
   try {
     if (mode === 'battle') {
-      // Phase 3: Promise.all() — fetch both users simultaneously
-      let results;
-      try {
-        results = await Promise.all([
-          fetchUser(u1).then(async u => ({ user: u, repos: await fetchRepos(u.repos_url) })),
-          fetchUser(u2).then(async u => ({ user: u, repos: await fetchRepos(u.repos_url) })),
-        ]);
-      } catch (e) {
-        out.innerHTML = `<div class="battle-grid">${showError(e.status || 500, e.user || 'unknown')}<div class="state-box"><p class="empty-txt">Battle cancelled</p></div></div>`;
-        return;
+
+      // Fetch both sides independently — neither cancels the other
+      const [side1, side2] = await Promise.all([
+        fetchBattleSide(u1),
+        fetchBattleSide(u2)
+      ]);
+
+      // Determine verdicts only if both sides loaded successfully
+      let verdict1 = '';
+      let verdict2 = '';
+
+      if (side1.ok && side2.ok) {
+        const stars1 = calcStars(side1.repos);
+        const stars2 = calcStars(side2.repos);
+        verdict1 = stars1 === stars2 ? 'tie' : stars1 > stars2 ? 'winner' : 'loser';
+        verdict2 = stars1 === stars2 ? 'tie' : stars2 > stars1 ? 'winner' : 'loser';
       }
 
-      // Compare total stars and assign winner/loser
-      const stars1 = calcStars(results[0].repos);
-      const stars2 = calcStars(results[1].repos);
-      const verdict1 = stars1 >= stars2 ? 'winner' : 'loser';
-      const verdict2 = stars2 >= stars1 ? 'winner' : 'loser';
+      // Render each side — profile card or 404 error independently
+      const html1 = side1.ok
+        ? buildCard(side1.user, side1.repos, verdict1)
+        : showError(side1.status, side1.username);
 
-      out.innerHTML = `<div class="battle-grid">
-        ${buildCard(results[0].user, results[0].repos, verdict1)}
-        ${buildCard(results[1].user, results[1].repos, verdict2)}
-      </div>`;
+      const html2 = side2.ok
+        ? buildCard(side2.user, side2.repos, verdict2)
+        : showError(side2.status, side2.username);
+
+      out.innerHTML = `<div class="battle-grid">${html1}${html2}</div>`;
 
     } else {
       // Phase 1 & 2: Single search with endpoint chaining
