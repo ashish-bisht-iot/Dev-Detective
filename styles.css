@@ -54,7 +54,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg2);min-height:100vh;color:
 
 /* Search area */
 .search-section{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;box-shadow:var(--shadow);transition:background 0.3s,border-color 0.3s}
-.input-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.input-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:relative}
 .gh-input{flex:1;min-width:140px;font-family:var(--mono);font-size:13px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);outline:none;transition:all 0.2s}
 .gh-input:hover{border-color:var(--accent);background:var(--accent-light)}
 .gh-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,129,247,0.15)}
@@ -137,3 +137,15 @@ body{font-family:'Syne',sans-serif;background:var(--bg2);min-height:100vh;color:
 /* Card fade-in animation */
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .profile-card{animation:fadeUp 0.35s ease both}
+
+/* Suggestions dropdown */
+.gh-input{position:relative}
+.suggestions-dropdown{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;overflow:hidden;animation:fadeUp 0.15s ease both}
+[data-theme="dark"] .suggestions-dropdown{box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.suggestion-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;transition:background 0.15s;border-bottom:1px solid var(--border)}
+.suggestion-item:last-child{border-bottom:none}
+.suggestion-item:hover{background:var(--accent-light)}
+.suggestion-icon{font-size:13px;color:var(--text3);flex-shrink:0}
+.suggestion-name{flex:1;font-size:13px;font-family:var(--mono);color:var(--text);font-weight:600}
+.suggestion-remove{width:22px;height:22px;border:none;background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:12px;flex-shrink:0;transition:all 0.15s;padding:0}
+.suggestion-remove:hover{background:rgba(248,81,73,0.1);color:#f85149}
