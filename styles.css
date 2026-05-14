@@ -77,6 +77,8 @@ body{font-family:'Syne',sans-serif;background:var(--bg2);min-height:100vh;color:
 .profile-card.winner:hover{box-shadow:0 8px 32px rgba(47,129,247,0.2)}
 .profile-card.loser{border:2px solid #f85149}
 .profile-card.loser:hover{box-shadow:0 8px 32px rgba(248,81,73,0.15)}
+.profile-card.tie{border:2px solid #d29922}
+.profile-card.tie:hover{box-shadow:0 8px 32px rgba(210,153,34,0.15)}
 
 .card-header{padding:1.25rem;display:flex;gap:14px;align-items:flex-start}
 .avatar{width:64px;height:64px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;object-fit:cover;transition:transform 0.2s,border-color 0.2s}
@@ -103,8 +105,10 @@ body{font-family:'Syne',sans-serif;background:var(--bg2);min-height:100vh;color:
 .verdict{padding:10px 1.25rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
 .verdict.win{background:rgba(47,129,247,0.08);color:#2f81f7}
 .verdict.lose{background:rgba(248,81,73,0.08);color:#f85149}
+.verdict.tie{background:rgba(210,153,34,0.08);color:#d29922}
 [data-theme="dark"] .verdict.win{background:rgba(47,129,247,0.12);color:#58a6ff}
 [data-theme="dark"] .verdict.lose{background:rgba(248,81,73,0.12);color:#f85149}
+[data-theme="dark"] .verdict.tie{background:rgba(210,153,34,0.12);color:#e3b341}
 
 /* Repos */
 .repos-section{padding:1rem 1.25rem;border-top:1px solid var(--border)}
