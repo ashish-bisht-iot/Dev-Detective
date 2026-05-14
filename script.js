@@ -4,6 +4,7 @@ function toggleTheme() {
   dark = !dark;
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : '');
   document.getElementById('theme-icon').className = dark ? 'ti ti-sun' : 'ti ti-moon';
+  localStorage.setItem('dd_theme', dark ? 'dark' : 'light');
 }
 
 let mode = 'single';
@@ -15,6 +16,7 @@ function setMode(m) {
   document.getElementById('input2').style.display = m === 'battle' ? 'flex' : 'none';
   document.getElementById('vs-label').style.display = m === 'battle' ? 'flex' : 'none';
   document.getElementById('output').innerHTML = '';
+  localStorage.setItem('dd_mode', m);
 }
 
 function onKey(e) {
@@ -130,7 +132,7 @@ function buildCard(user, repos, verdict) {
   </div>`;
 }
 
-// Fetch one battle side — returns { ok, user, repos, error }
+// Fetch one battle side — returns { ok, user, repos } or { ok: false, status, username }
 async function fetchBattleSide(username) {
   try {
     const user = await fetchUser(username);
@@ -138,6 +140,69 @@ async function fetchBattleSide(username) {
     return { ok: true, user, repos };
   } catch (e) {
     return { ok: false, status: e.status || 500, username };
+  }
+}
+
+// Save last search to localStorage
+function saveToStorage(data) {
+  localStorage.setItem('dd_last', JSON.stringify(data));
+}
+
+// Restore last search from localStorage on page load
+function restoreFromStorage() {
+  // Restore theme
+  const savedTheme = localStorage.getItem('dd_theme');
+  if (savedTheme === 'dark') {
+    dark = true;
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('theme-icon').className = 'ti ti-sun';
+  }
+
+  // Restore mode
+  const savedMode = localStorage.getItem('dd_mode');
+  if (savedMode === 'battle') {
+    mode = 'battle';
+    document.getElementById('btn-single').classList.remove('active');
+    document.getElementById('btn-battle').classList.add('active');
+    document.getElementById('input2').style.display = 'flex';
+    document.getElementById('vs-label').style.display = 'flex';
+  }
+
+  // Restore last search result
+  const saved = localStorage.getItem('dd_last');
+  if (!saved) return;
+
+  try {
+    const data = JSON.parse(saved);
+
+    // Restore input values
+    document.getElementById('input1').value = data.u1 || '';
+    if (data.u2) document.getElementById('input2').value = data.u2;
+
+    // Restore output HTML directly from saved data
+    if (data.mode === 'battle' && data.sides) {
+      let verdict1 = '', verdict2 = '';
+      if (data.sides[0].ok && data.sides[1].ok) {
+        const stars1 = calcStars(data.sides[0].repos);
+        const stars2 = calcStars(data.sides[1].repos);
+        verdict1 = stars1 === stars2 ? 'tie' : stars1 > stars2 ? 'winner' : 'loser';
+        verdict2 = stars1 === stars2 ? 'tie' : stars2 > stars1 ? 'winner' : 'loser';
+      }
+      const html1 = data.sides[0].ok
+        ? buildCard(data.sides[0].user, data.sides[0].repos, verdict1)
+        : showError(data.sides[0].status, data.sides[0].username);
+      const html2 = data.sides[1].ok
+        ? buildCard(data.sides[1].user, data.sides[1].repos, verdict2)
+        : showError(data.sides[1].status, data.sides[1].username);
+      document.getElementById('output').innerHTML = `<div class="battle-grid">${html1}${html2}</div>`;
+
+    } else if (data.mode === 'single' && data.userData) {
+      document.getElementById('output').innerHTML = buildCard(data.userData, data.reposData, '');
+    }
+
+  } catch (e) {
+    // Corrupted storage — clear it
+    localStorage.removeItem('dd_last');
   }
 }
 
@@ -168,7 +233,6 @@ async function runSearch() {
       // Determine verdicts only if both sides loaded successfully
       let verdict1 = '';
       let verdict2 = '';
-
       if (side1.ok && side2.ok) {
         const stars1 = calcStars(side1.repos);
         const stars2 = calcStars(side2.repos);
@@ -176,28 +240,32 @@ async function runSearch() {
         verdict2 = stars1 === stars2 ? 'tie' : stars2 > stars1 ? 'winner' : 'loser';
       }
 
-      // Render each side — profile card or 404 error independently
       const html1 = side1.ok
         ? buildCard(side1.user, side1.repos, verdict1)
         : showError(side1.status, side1.username);
-
       const html2 = side2.ok
         ? buildCard(side2.user, side2.repos, verdict2)
         : showError(side2.status, side2.username);
 
       out.innerHTML = `<div class="battle-grid">${html1}${html2}</div>`;
 
+      // Save to localStorage
+      saveToStorage({ mode: 'battle', u1, u2, sides: [side1, side2] });
+
     } else {
       // Phase 1 & 2: Single search with endpoint chaining
       let userData, reposData;
       try {
-        userData = await fetchUser(u1);                    // Phase 1: fetch profile
-        reposData = await fetchRepos(userData.repos_url);  // Phase 2: chain to repos
+        userData = await fetchUser(u1);
+        reposData = await fetchRepos(userData.repos_url);
       } catch (e) {
         out.innerHTML = showError(e.status || 500, e.user || u1);
         return;
       }
       out.innerHTML = buildCard(userData, reposData, '');
+
+      // Save to localStorage
+      saveToStorage({ mode: 'single', u1, userData, reposData });
     }
 
   } finally {
@@ -205,3 +273,6 @@ async function runSearch() {
     btn.textContent = 'Investigate';
   }
 }
+
+// Restore on page load
+window.addEventListener('DOMContentLoaded', restoreFromStorage);
