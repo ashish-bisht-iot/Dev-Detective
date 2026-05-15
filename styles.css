@@ -75,8 +75,8 @@ body{font-family:'Syne',sans-serif;background:var(--bg2);min-height:100vh;color:
 .card-close-btn{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.2s;z-index:10}
 .card-close-btn:hover{background:rgba(248,81,73,0.1);color:#f85149;border-color:#f85149}
 .profile-card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(47,129,247,0.12);border-color:var(--accent)}
-.profile-card.winner{border:2px solid #2f81f7}
-.profile-card.winner:hover{box-shadow:0 8px 32px rgba(47,129,247,0.2)}
+.profile-card.winner{border:2px solid #238636}
+.profile-card.winner:hover{box-shadow:0 8px 32px rgba(35,134,54,0.2)}
 .profile-card.loser{border:2px solid #f85149}
 .profile-card.loser:hover{box-shadow:0 8px 32px rgba(248,81,73,0.15)}
 .profile-card.tie{border:2px solid #d29922}
@@ -105,10 +105,10 @@ body{font-family:'Syne',sans-serif;background:var(--bg2);min-height:100vh;color:
 
 /* Battle verdict */
 .verdict{padding:10px 1.25rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
-.verdict.win{background:rgba(47,129,247,0.08);color:#2f81f7}
+.verdict.win{background:rgba(35,134,54,0.08);color:#238636}
 .verdict.lose{background:rgba(248,81,73,0.08);color:#f85149}
 .verdict.tie{background:rgba(210,153,34,0.08);color:#d29922}
-[data-theme="dark"] .verdict.win{background:rgba(47,129,247,0.12);color:#58a6ff}
+[data-theme="dark"] .verdict.win{background:rgba(35,134,54,0.12);color:#3fb950}
 [data-theme="dark"] .verdict.lose{background:rgba(248,81,73,0.12);color:#f85149}
 [data-theme="dark"] .verdict.tie{background:rgba(210,153,34,0.12);color:#e3b341}
 
