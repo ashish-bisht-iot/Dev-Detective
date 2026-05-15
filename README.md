@@ -133,8 +133,7 @@ dev-detective/
 ![iphone-View](assets/iphone-View.png)
 
 ### 404 error state in battle mode
-![404 error state in battle mode](assets/error-state in battle-mode.png)
-
+![404 error state in battle mode](assets/error-state in battle-mode.png).
 ---
 
 Built as part of **Sprint 03 — Asynchronous Data Integration** at Prodesk IT.
