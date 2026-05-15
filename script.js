@@ -203,8 +203,12 @@ function showLoading(users) {
   }
 }
 
-function showError(status, user) {
-  return `<div class="state-box">
+function showError(status, user, side) {
+  const closeBtn = side
+    ? `<button class="card-close-btn" onclick="closeCard(${side})" title="Close"><i class="ti ti-x"></i></button>`
+    : `<button class="card-close-btn" onclick="closeCard()" title="Close"><i class="ti ti-x"></i></button>`;
+  return `<div class="state-box" style="position:relative">
+    ${closeBtn}
     <div style="font-size:32px;margin-bottom:12px"><i class="ti ti-ghost"></i></div>
     <p class="error-code">${status}</p>
     <p class="error-msg">${status === 404 ? `"${user}" not found on GitHub` : 'API error — check rate limit or try again'}</p>
@@ -315,10 +319,10 @@ function restoreFromStorage() {
       }
       const html1 = data.sides[0].ok
         ? buildCard(data.sides[0].user, data.sides[0].repos, verdict1, 1)
-        : showError(data.sides[0].status, data.sides[0].username);
+        : showError(data.sides[0].status, data.sides[0].username, 1);
       const html2 = data.sides[1].ok
         ? buildCard(data.sides[1].user, data.sides[1].repos, verdict2, 2)
-        : showError(data.sides[1].status, data.sides[1].username);
+        : showError(data.sides[1].status, data.sides[1].username, 2);
       document.getElementById('output').innerHTML = `<div class="battle-grid">${html1}${html2}</div>`;
 
     } else if (data.mode === 'single' && data.userData) {
@@ -366,10 +370,10 @@ async function runSearch() {
 
       const html1 = side1.ok
         ? buildCard(side1.user, side1.repos, verdict1, 1)
-        : showError(side1.status, side1.username);
+        : showError(side1.status, side1.username, 1);
       const html2 = side2.ok
         ? buildCard(side2.user, side2.repos, verdict2, 2)
-        : showError(side2.status, side2.username);
+        : showError(side2.status, side2.username, 2);
 
       out.innerHTML = `<div class="battle-grid">${html1}${html2}</div>`;
       saveToStorage({ mode: 'battle', u1, u2, sides: [side1, side2] });
