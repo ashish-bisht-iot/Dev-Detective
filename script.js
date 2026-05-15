@@ -123,16 +123,34 @@ function attachSuggestionEvents() {
 }
 
 // ── Close card function ───────────────────────────────────────
-function closeCard() {
-  // Clear output and reset inputs
-  document.getElementById('output').innerHTML = `
-    <div class="state-box">
-      <div style="font-size:32px;margin-bottom:12px"><i class="ti ti-fingerprint"></i></div>
-      <p class="empty-txt">Enter a GitHub username to begin</p>
-      <p class="empty-sub">Fetching profile, repos &amp; stats in real-time</p>
-    </div>`;
-  document.getElementById('input1').value = '';
-  document.getElementById('input2').value = '';
+function closeCard(side) {
+  if (side) {
+    // Battle mode — remove just that one card and replace with empty state
+    const cards = document.querySelectorAll('.profile-card, .state-box');
+    const battleGrid = document.querySelector('.battle-grid');
+    if (battleGrid) {
+      const children = Array.from(battleGrid.children);
+      const index = side === 1 ? 0 : 1;
+      children[index].outerHTML = `
+        <div class="state-box">
+          <div style="font-size:32px;margin-bottom:12px"><i class="ti ti-fingerprint"></i></div>
+          <p class="empty-txt">Card closed</p>
+          <p class="empty-sub">Search a new username above</p>
+        </div>`;
+      // Clear that input
+      document.getElementById('input' + side).value = '';
+    }
+  } else {
+    // Single mode — clear everything
+    document.getElementById('output').innerHTML = `
+      <div class="state-box">
+        <div style="font-size:32px;margin-bottom:12px"><i class="ti ti-fingerprint"></i></div>
+        <p class="empty-txt">Enter a GitHub username to begin</p>
+        <p class="empty-sub">Fetching profile, repos &amp; stats in real-time</p>
+      </div>`;
+    document.getElementById('input1').value = '';
+    document.getElementById('input2').value = '';
+  }
   // Clear saved result so it doesn't restore on refresh
   localStorage.removeItem('dd_last');
 }
@@ -213,7 +231,7 @@ function repoListHTML(repos) {
     </div>`).join('');
 }
 
-function buildCard(user, repos, verdict) {
+function buildCard(user, repos, verdict, side) {
   const stars = calcStars(repos);
   const verdictHTML = verdict === 'winner'
     ? `<div class="verdict win"><i class="ti ti-trophy"></i> Winner — ${fmtNum(stars)} ⭐ total stars</div>`
@@ -223,10 +241,10 @@ function buildCard(user, repos, verdict) {
     ? `<div class="verdict tie"><i class="ti ti-equal"></i> Tie — ${fmtNum(stars)} ⭐ total stars</div>`
     : '';
 
-  // Close button only shown in single mode (not battle)
-  const closeBtn = verdict === ''
-    ? `<button class="card-close-btn" onclick="closeCard()" title="Close"><i class="ti ti-x"></i></button>`
-    : '';
+  // Close button shown on all cards — passes side number in battle mode
+  const closeBtn = side
+    ? `<button class="card-close-btn" onclick="closeCard(${side})" title="Close"><i class="ti ti-x"></i></button>`
+    : `<button class="card-close-btn" onclick="closeCard()" title="Close"><i class="ti ti-x"></i></button>`;
 
   return `<div class="profile-card ${verdict || ''}">
     ${closeBtn}
@@ -296,10 +314,10 @@ function restoreFromStorage() {
         verdict2 = stars1 === stars2 ? 'tie' : stars2 > stars1 ? 'winner' : 'loser';
       }
       const html1 = data.sides[0].ok
-        ? buildCard(data.sides[0].user, data.sides[0].repos, verdict1)
+        ? buildCard(data.sides[0].user, data.sides[0].repos, verdict1, 1)
         : showError(data.sides[0].status, data.sides[0].username);
       const html2 = data.sides[1].ok
-        ? buildCard(data.sides[1].user, data.sides[1].repos, verdict2)
+        ? buildCard(data.sides[1].user, data.sides[1].repos, verdict2, 2)
         : showError(data.sides[1].status, data.sides[1].username);
       document.getElementById('output').innerHTML = `<div class="battle-grid">${html1}${html2}</div>`;
 
@@ -347,10 +365,10 @@ async function runSearch() {
       }
 
       const html1 = side1.ok
-        ? buildCard(side1.user, side1.repos, verdict1)
+        ? buildCard(side1.user, side1.repos, verdict1, 1)
         : showError(side1.status, side1.username);
       const html2 = side2.ok
-        ? buildCard(side2.user, side2.repos, verdict2)
+        ? buildCard(side2.user, side2.repos, verdict2, 2)
         : showError(side2.status, side2.username);
 
       out.innerHTML = `<div class="battle-grid">${html1}${html2}</div>`;
