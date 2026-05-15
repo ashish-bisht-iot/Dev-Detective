@@ -1,4 +1,7 @@
+# Prompts.md — Dev-Detective Sprint 03
+
 This file documents the AI prompts I used during development as a learning tool and pair-programmer. I used Claude/ChatGPT to understand concepts, debug issues, and get unstuck.
+
 ---
 
 ## 1. Understanding Async/Await basics
@@ -25,7 +28,7 @@ My app was crashing when I searched a username that didn't exist. The page just 
 
 ---
 
-## 3. Chaining two API calls (Phase 2)
+## 3. Chaining two API calls
 
 Phase 2 required me to use the `repos_url` from the first API response to make a second fetch. I wasn't sure how to do two async calls one after another.
 
@@ -49,7 +52,7 @@ JavaScript's built-in `Date` object plus `toLocaleDateString()` handles this cle
 
 ---
 
-## 5. Promise.all for Battle Mode (Phase 3)
+## 5. Promise.all for Battle Mode
 
 I needed to fetch two users at the same time instead of one after the other.
 
@@ -73,11 +76,74 @@ Phase 3 needed me to loop through all repos and add up the `stargazers_count`.
 
 ---
 
-## 7. Debugging a rate limit error (403)
+## 7. Handling a tie in Battle Mode
 
-At one point I was getting a 403 error from the GitHub API.
+Both users having equal stars was showing both as "winner" which was wrong.
 
 **My prompt:**
-> "github api returning 403 forbidden, what does that mean and how do i fix it"
->
-> 
+> "in my battle mode both users show as winner when they have equal stars, how do i add a tie condition"
+
+**What I learned:**
+I needed to check `stars1 === stars2` first before deciding winner or loser. Used a ternary chain — if equal assign `'tie'`, else compare normally. I also added a separate yellow/gold UI style for the tie verdict so it is visually distinct from winner (blue) and loser (red).
+
+---
+
+## 8. Independent 404 handling in Battle Mode
+
+If one username did not exist in Battle Mode, the whole battle was cancelled and neither card showed.
+
+**My prompt:**
+> "in my battle mode if one user is not found i want to show 404 error only for that side and still show the other users profile card, not cancel the whole battle"
+
+**What I learned:**
+The problem was using a single `try/catch` around `Promise.all()` — if either fetch failed, the whole thing threw. The fix was to create a `fetchBattleSide()` helper that wraps each fetch in its own `try/catch` and returns `{ ok: true }` or `{ ok: false }` instead of throwing. Then `Promise.all()` always resolves and I render each side independently based on the `ok` flag.
+
+---
+
+## 9. Persisting data across page refresh with localStorage
+
+After refreshing the page, the search results and inputs were cleared.
+
+**My prompt:**
+> "how do i save my search results so they still show after the user refreshes the page in javascript"
+
+**What I learned:**
+`localStorage` stores key-value pairs that survive page refreshes. I used `localStorage.setItem()` to save the last search data as a JSON string after every successful search, and `localStorage.getItem()` on page load inside a `DOMContentLoaded` listener to restore it. I also saved the theme and mode so those persist too.
+
+---
+
+## 10. Search history suggestions dropdown
+
+I wanted the input to show previously searched usernames as suggestions when clicked.
+
+**My prompt:**
+> "how do i build a custom suggestions dropdown in javascript that shows previous search history from localStorage when the user clicks an input field"
+
+**What I learned:**
+I used `focus` and `input` events on the text field to show a dynamically created dropdown div populated from a `dd_history` array in localStorage. `mousedown` fires before `blur`, so clicking a suggestion fills the input before the dropdown closes. I also added a filter so typing narrows the suggestions down.
+
+---
+
+## 11. Removing a suggestion permanently
+
+Clicking the X on a suggestion removed it visually but it came back after refresh.
+
+**My prompt:**
+> "i remove an item from my suggestions dropdown but it comes back after refresh, how do i make the removal permanent"
+
+**What I learned:**
+I was re-rendering the dropdown from localStorage but not actually updating the stored array first. The fix was to call `removeFromHistory()` which filters the array and immediately calls `localStorage.setItem()` to save the updated list before re-rendering the dropdown. Now the removal persists across refreshes.
+
+---
+
+## 12. Close button on profile card
+
+There was no way to dismiss a profile card without refreshing the page.
+
+**My prompt:**
+> "how do i add a close or dismiss button on a card in javascript that removes it from the dom and also clears the saved localStorage data"
+
+**What I learned:**
+I added a `closeCard()` function that resets the output div back to the empty state, clears both input fields, and calls `localStorage.removeItem('dd_last')` so the card does not restore on next refresh. The button is positioned absolutely in the top-right corner of the card using CSS `position: relative` on the card and `position: absolute` on the button.
+
+---
